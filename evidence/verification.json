@@ -1,0 +1,32 @@
+{
+  "version": "herdr 0.9.5",
+  "upstream_commit": "2ecf19a92fc3a7fff75b6ce3655ef04f4625ec01",
+  "binary_sha256": "14d9e8bc8b4a9e0118d77c32266f76d461f09b40342eb23752960bd89f59929d",
+  "scout": {
+    "ready_response_seen": true,
+    "foreground_processes": [
+      {
+        "pid": 4138262,
+        "name": "hermes"
+      }
+    ],
+    "native_resume_recalled_token": true
+  },
+  "reviewer": {
+    "ready_response_seen": true,
+    "foreground_processes": [
+      {
+        "pid": 4130257,
+        "name": "sh"
+      }
+    ]
+  },
+  "default_configs_unchanged": true,
+  "isolated_plugin_matches_reviewed_asset": true,
+  "limitations": [
+    "Herdr agent prompt --wait returned false agent_prompt_stalled for two successful live turns.",
+    "Hermes resume was manual via native --resume; automatic server-restart resume is not enabled or verified.",
+    "Hermes plugin installed only under disposable HERMES_HOME, not enabled in production.",
+    "Desktop capture found no windows; terminal PTY render and client detach were verified instead."
+  ]
+}
