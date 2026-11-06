@@ -53,6 +53,9 @@ creation overrides or replaying a task. No other panes or profiles are modified.
 - `wait ... --timeout 10` returned turn_settled with the real final marker for
   each. Both test workers then stopped; Desktop history checks still passed.
 - Native redacted export of memory-live parsed successfully (one session record).
+- After confirming only an idle owned shell remained, stopped the dedicated
+  Herdr trial server and exercised ensure_server: absent -> running. No Hermes
+  gateway restart. Automatic launch of the workbench server is now live-tested.
 - Default config.yaml and .env were byte-identical to their pre-trial hashes.
 - Old safe-mode/source=tool smoke worker retired. No test agents left running.
 
