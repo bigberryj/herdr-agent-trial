@@ -1,0 +1,4 @@
+#!/bin/sh
+# Pinned local trial: no default Herdr or Hermes config changes.
+export HERDR_CONFIG_PATH=/home/byron/projects/herdr-agent-trial/config.toml
+exec /home/byron/.local/lib/herdr/v0.9.5/herdr --session j5-herdr-trial "$@"

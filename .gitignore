@@ -1,0 +1,7 @@
+/runtime/
+/workspace/
+/evidence/*
+!/evidence/verification.json
+__pycache__/
+*.pyc
+.env*
