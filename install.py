@@ -31,7 +31,8 @@ def main():
     wrapper.chmod(0o755)
     bindir = Path.home()/'.local/bin'
     bindir.mkdir(parents=True, exist_ok=True)
-    for name,target in [('herdr',binary),('herdr-trial',wrapper)]:
+    for name,target in [('herdr',binary),('herdr-trial',wrapper),('herdr-workers',root/'herdr-workers')]:
+        target.chmod(0o755)
         link=bindir/name
         if link.exists() or link.is_symlink():
             if not link.is_symlink() or link.resolve() != target.resolve():
