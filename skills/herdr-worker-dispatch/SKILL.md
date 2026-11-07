@@ -1,7 +1,7 @@
 ---
 name: herdr-worker-dispatch
 description: "Use when dispatching persistent project agents."
-version: 1.0.0
+version: 1.1.0
 author: J5
 license: MIT
 metadata:
@@ -9,124 +9,110 @@ metadata:
     tags: [herdr, delegation, desktop, telegram, honcho]
 ---
 
-# Persistent project workers: Herdr + native Hermes + local Honcho
+# Persistent project workers: Herdr + native Hermes + shared local memory
 
-## Operator's workflow
+## When to Use
 
-For independent project/coding/research worker tasks requested from Desktop,
-Telegram or terminal, use this dispatcher by default so Byron can watch their
-terminals in Herdr and reopen native conversations in Desktop later. Byron need
-not explicitly say Herdr each time. Keep parent control/review in the current
-chat; do not move his current conversation or replace the Desktop application.
+- Byron asks for independent project, coding or research workers from Desktop,
+  Telegram or terminal, and expects them watchable in Herdr, reopenable in
+  Desktop later, and sharing the existing local Honcho memory.
+- Do NOT use for single tool calls, quick lookups, or Kanban/fleet cards; those
+  keep their own semantics.
+- This is skill-guided dispatch. Never claim the built-in ephemeral delegation
+  path was transparently intercepted, and never present a hidden helper
+  transcript as a visible Herdr worker.
 
-This is a skill-driven dispatch path, NOT an interception/monkeypatch of the
-built-in delegate_task tool. Short ephemeral lookups may use ordinary tools;
-do not claim their hidden transcripts are Herdr/Desktop worker conversations.
-Do not redirect an existing Kanban/fleet task or another profile implicitly.
-Use this workflow for long-lived independent worker agents whose conversation
-history the operator should be able to track.
+## Standing rules
 
-## Commands
+1. **Dispatch, don't hand-manage.** Use the `herdr-workers` CLI
+   (`~/.local/bin/herdr-workers`); never reconstruct the session-creation flags
+   by hand — the CLI path has known policy traps.
+2. **Native sessions only.** A worker must be a real gateway session created
+   with `source=cli`. A hidden source (`tool`, `oneshot`) is invisible to the
+   Desktop sidebar and to session recall. Safe-mode / ignore-config launches
+   disable plugins and therefore memory — never use them for real workers.
+3. **History is the native session ID.** Return the session ID and the
+   `[Herdr] <name> <id>` title. Prove Desktop visibility through the
+   Desktop's own authenticated routes, never through a SQLite row.
+4. **Local memory only, fail closed.** Require the enabled local Honcho
+   provider/plugin and a reachable loopback endpoint before launching. No cloud
+   fallback, no credential copying, no grant/capture/budget changes, no
+   halt clearing.
+5. **Unify the human peer first.** If a runtime identity (for example a
+   Unix-uid or a messaging-platform id) is not aliased to the configured human
+   peer, worker conclusions land under a *different* observed peer than
+   Byron's own chat — shared storage without shared recall. See
+   `references/native-worker-session.md`.
+6. **Bounded concurrency and turns.** Max 2 managed workers, 1..40 turns each,
+   default 20. Reuse the operator's configured delegation provider/model and
+   native authentication.
+7. **Ambiguity is not failure.** `inspect_required` or an ambiguous wait status
+   means the prompt may already be admitted: read the native conversation
+   before doing anything. Never resubmit on an ambiguous status alone.
+8. **Completion is native settlement plus parent verification.** Wait on the
+   admitted prompt, running/pending/approval state and final assistant turn;
+   then verify real files/tests yourself. Herdr's idle/working/done badges are
+   advisory and can miss working transitions entirely.
+9. **Stop means stop the work.** Interrupt/verify the native run and confirm
+   nothing is pending before closing the owned pane; a closed pane does not
+   cancel gateway-owned inference. Resume attaches the *same* native session ID.
+10. **Private state stays private.** Task files and the worker manifest are
+    private (0600) runtime state; never commit them, quote transcripts, or
+    persist native HTTP tickets or credentials.
+11. **Explain to Byron in plain language first.** For a newly installed
+    workflow, lead with the literal command and what he will see; give
+    architecture, IDs and evidence after he asks. A dense architecture answer
+    to "how do I use it" is a failed answer.
+12. **The parent keeps authority.** Review, security, deploy, merge and
+    promotion decisions stay with the parent conversation.
 
-Launcher: `/home/byron/projects/herdr-agent-trial/workers.py`
-Native CLI: `python3 /home/byron/projects/herdr-agent-trial/workers.py`
-Herdr viewer: `/home/byron/.local/bin/herdr-trial`
+## Procedure
 
-1. Choose an explicit project cwd and bounded task with acceptance criteria.
-   Use a unique lowercase worker name (max24 chars). Inspect `list` first.
-2. Write its task text to a private file under
-   `/home/byron/projects/herdr-agent-trial/runtime/` using file tools, mode0600.
-   Include scope, allowed files, no commit/deploy authority unless requested,
-   limits, required evidence and error reporting. Do not put secrets in prompts.
-3. Launch with the configured delegation route (native auth, no credential copy):
+1. Inspect `herdr-workers list` — reuse an existing worker instead of
+   duplicating one, and respect the 2-worker cap.
+2. Scope the task: explicit project cwd, acceptance criteria, files allowed,
+   explicit no-commit/no-deploy boundaries, evidence required, and the turn
+   budget. Write it to a private task file (0600) under the runtime directory;
+   never put prompt text or secrets in command arguments.
+3. Launch:
+   ```sh
+   herdr-workers start --name <unique-worker> \
+     --cwd <absolute-project-directory> \
+     --prompt-file <private-task-file> --max-turns 20
+   ```
+   The launcher starts the dedicated workbench server if absent, creates the
+   native session, then attaches the CLI and submits the prompt once.
+4. Read the returned `session_id` and title. Report both to Byron. If
+   `launch_status` is not `started`, do not retry the prompt — inspect first.
+5. Before ending the turn, start a bounded completion wait with the terminal
+   tool's background+notify so the real result wakes the parent:
+   ```sh
+   herdr-workers wait <worker> --timeout 600
+   ```
+   `turn_settled` / `needs_input` / `still_pending` are conversation states,
+   not artifact-quality approvals. Escalate native approval/question state
+   instead of auto-answering it.
+6. Verify the worker's claims against real artifacts and test output, then
+   report. Use `herdr-workers read <worker>` for the native conversation and
+   `show` for the manifest; keep large exports out of the parent context.
+7. `stop` and `resume` only for workers the launcher owns.
 
-```sh
-python3 /home/byron/projects/herdr-agent-trial/workers.py start \
-  --name <unique-worker> --cwd <absolute-project-directory> \
-  --prompt-file <private-task-file> --max-turns 20
-```
+## Known limits
 
-The dedicated named Herdr server starts if absent. The launcher creates an
-owned workspace and a native gateway `source=cli` session with normal config,
-then attaches Hermes by --resume and submits the private prompt file once.
-`source=tool` is NOT used: Desktop hides those sessions. Safe-mode and
-ignore-rules/config are NOT used: those disable memory. Current CLI named-create
-plus overrides can hit a policy mismatch, so use the dispatcher rather than
-reconstructing that broken path. RPC toolsets must be an array, not a CSV string.
+- The local memory inference gate was repaired on 2026-11-07 (a provider
+  `stop_reason: max_tokens` response had been misclassified as malformed, and
+  one such response latched the halt for ten days). Local inference now works:
+  real inferences land, peer representations and cards regenerate, and the
+  human peer's documents are updated. Still fail closed — never clear a halt,
+  mint/extend a grant, raise a cap or switch providers to make this look
+  healthy; those are the operator's decisions. The 619 representation work
+  units that failed during the outage stay processed-with-error; requeueing
+  them is a separate, explicitly costed decision.
+- Backend route proof is not a visual Desktop click-through; say which one you
+  actually performed.
+- Automatic agent recovery after a workbench-server reboot is not guaranteed.
+- Test conversations stay in Desktop history by design; do not delete native
+  sessions to tidy up.
 
-4. Read the returned native session_id and `[Herdr] ...` title. Report the title
-   to Byron. Do not claim a launched task is completed. `inspect_required` is an
-   ambiguous start, not permission to retry the prompt. `start` is idempotent
-   for a recorded name; inspect its pane/history before taking action.
-5. Track and read:
-
-```sh
-python3 /home/byron/projects/herdr-agent-trial/workers.py list
-python3 /home/byron/projects/herdr-agent-trial/workers.py show <worker>
-python3 /home/byron/projects/herdr-agent-trial/workers.py read <worker>
-```
-
-Use terminal code to reduce large native exports before bringing them into the
-parent context. Native sessions/conversations are authoritative; Herdr's
-idle/working/done badges are advisory and can miss working transitions.
-Never use agent_prompt_stalled alone to decide a task failed or resend work.
-
-Before ending the parent turn after dispatch, start a bounded completion wait
-with the terminal tool's `background=true, notify=true` so its real result wakes
-the parent; do not promise an update with no notification mechanism:
-
-```sh
-python3 /home/byron/projects/herdr-agent-trial/workers.py wait <worker> --timeout 600
-```
-
-The wait reads native session state, verifies the actual task prompt was admitted,
-and distinguishes turn_settled, needs_input and still_pending. These are not
-artifact-quality judgments. A timeout leaves the conversation durable; inspect
-rather than resubmit. Native approval/question state must be escalated, not
-auto-answered. Do not hold or poll subagent transcripts while waiting.
-
-6. Stop or resume only owned records when requested/appropriate:
-
-```sh
-python3 /home/byron/projects/herdr-agent-trial/workers.py stop <worker>
-python3 /home/byron/projects/herdr-agent-trial/workers.py resume <worker>
-```
-
-Stop checks/interrupts a gateway-owned run and verifies no pending work before
-closing its terminal; closing a terminal by itself does not cancel inference.
-Resume reuses the same native conversation, not a new chat or replayed task.
-Do not interrupt while Byron is actively interacting with that conversation.
-
-## Memory and evidence rules
-
-- Require default Hermes home, enabled Honcho plugin/provider, and the existing
-  loopback Honcho host. Refuse bypass flags or cloud-memory fallback.
-- Use native Honcho context/profile/conclusion tools. Keep real standing user
-  preferences separate from transient project notes and synthetic test markers.
-- Local Honcho conclusion write + query read-back was verified across two real
-  workers. That does not establish full automatic memory intelligence: existing
-  inference gate was halted with `malformed`; automatic extraction/dialectic
-  is degraded, and message embeddings/card/summary jobs were disabled.
-- Do NOT clear a budget halt, renew grants, increase caps or add a paid fallback
-  to make this workflow look healthy. Report those blockers separately.
-- Keep raw prompts, private transcripts, sessions, config and credential values
-  out of GitHub/status messages. Runtime manifest/prompt files are private.
-- Current cap: max2 managed workers, max1..40 turns each, default20. Reuse the
-  operator's configured delegation provider/model; no global default changes.
-- Verify actual file changes and tests in the parent before declaring success.
-  Require a verifiable path/ID for external writes and read back exact targets.
-- Do not launch more workers solely because Herdr labels one idle; check native
-  conversation/task evidence. Never silently auto-promote or change Jev/fleet.
-
-## Viewing and limitations
-
-Byron can open Herdr with `~/.local/bin/herdr-trial` and detach using Ctrl+B Q.
-In Desktop, look for `[Herdr] <worker> ...` conversations under the default
-profile; refresh/search if necessary. The same authenticated Desktop list and
-messages endpoints were exercised with real worker sessions, as was native
-stop/resume of the same ID. Windows Desktop visual click-through was not
-performed; do not represent backend proof as a screenshot.
-
-No gateway restart, default plugin install, public listener, or separate memory
-store is needed. The official Herdr identity plugin remains isolated; this
-workflow uses native gateway session IDs, not terminal heuristics, for history.
+Depth for the native-session mechanics, Desktop verification routes and peer
+unification lives in `references/native-worker-session.md`.

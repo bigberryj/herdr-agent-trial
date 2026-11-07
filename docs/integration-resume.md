@@ -29,17 +29,33 @@ named-create/override mismatch. RPC toolsets must be an array.
 - 15 offline unit tests cover dispatch bounds, local-memory guard, idempotency,
   durable request IDs, native flags, RPC array shape and settlement exclusions.
 
-**Existing memory limitation:** local inference gate has latched `malformed`
-(read independently through read-only ledger inspection). Gate health reports
-inference not_assessed. No halt/grant/cap/provider change was made. Conclusion
-save/query works across workers; automatic extraction/dialectic is degraded.
-Do not claim all Honcho intelligence is healthy. Report repair as a separate gate.
+## Memory limitation — resolved 2026-11-07
 
-Desktop backend list/history proof is complete. Visual click-through in Byron's
-Windows Desktop client was not performed (no local CDP); do not call API proof
-a screenshot. Normal native session ownership/IDs are preserved for his UI.
+The local Honcho inference gate is **repaired**. Its halt was a local
+misclassification, not an upstream quota problem: MiniMax-M3 legitimately
+returns `stop_reason: max_tokens` when a response hits the output cap, the
+gate treated that as a malformed provider response, and because every
+non-ok completion latches the halt, one truncated extraction closed the gate
+for ten days (2026-10-28 → 2026-11-07). 619 representation work units failed
+with 403 and all memory writes stopped.
 
-The older progress notes below are historical and superseded by this update.
+Fix shipped as `honcho-minimax/gate_serve.py` + `honcho_ops/budget.py` on
+branch `fix/gate-truncation-outcome` (PR
+bigberryj/honcho-subscription-bridge#2). Truncation is now a charged,
+request-scoped, non-latching outcome. Verified live: truncated → 502 with no
+halt, next request → 200, 22 real inferences succeeded, byron's peer
+representation regenerated and its documents were updated.
+
+Consequence for this repo: **local Honcho inference works again.** Worker
+conclusions, peer cards and representations all land in the shared local
+store under the unified `byron` peer, so workers and normal sessions recall
+each other's memory. The watchdog that failed to self-heal was re-armed with a
+1008-run budget. The 619 historical failed work units remain
+processed-with-error — requeueing them costs ~131 requests / ~1.07M reserved
+tokens against 61 requests / 132,976 tokens remaining, so that is an
+explicit operator decision, not a background task.
+
+**Older progress notes below are historical and superseded by this update.**
 
 
 ## Operator request
