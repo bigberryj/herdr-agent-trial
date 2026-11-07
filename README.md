@@ -1,5 +1,47 @@
 # Herdr local agent trial
 
+## Current workflow: ask in Desktop or Telegram
+
+Persistent project workers now have a maintained dispatch path: `workers.py`,
+installed as `~/.local/bin/herdr-workers`, plus the default-profile
+`herdr-worker-dispatch` skill. Ask J5 for independent project agents normally;
+the workflow launches native Hermes sessions in Herdr and returns their
+`[Herdr] <worker> ...` titles for later Desktop history/resume. This is explicit
+skill-guided dispatch, not a replacement/interceptor for every built-in ephemeral
+subagent or an automatic migration of existing sessions.
+
+**Live verified:** two configured MiniMax-M3 workers; local Honcho conclusion
+save/read-back and cross-worker retrieval; authenticated Desktop session list
+and exact conversation endpoints; stop/resume of the same native conversation;
+history remains readable after both test terminals stop. 15 offline tests pass.
+The old memory-disabled smoke worker was retired, leaving no test agents running.
+
+**Memory limitation:** the existing local inference gate is latched `malformed`.
+Conclusion save/query works, but automatic extraction/dialectic is degraded.
+No halt/grant/cap change, cloud-memory fallback or gateway restart was performed.
+See docs/integration-resume.md. Windows Desktop visual click-through is not
+claimed; its authenticated backend list/history was exercised.
+
+Useful operator commands:
+
+```sh
+herdr-workers list
+herdr-workers show <worker>
+herdr-workers read <worker>
+herdr-workers resume <worker>
+herdr-workers wait <worker> --timeout 600
+herdr-workers stop <worker>
+```
+
+Stop checks native gateway execution before closing the terminal. Wait reports
+native turn settlement/needs-input, not artifact correctness. A parent agent
+uses a background wait with completion notification, then verifies real results.
+The maintained agent workflow is skills/herdr-worker-dispatch/SKILL.md.
+
+The original isolated smoke-trial details below are historical; normal workers
+use source=cli and the existing local Honcho, not safe-mode/source=tool.
+
+
 User-local Herdr **0.9.5** on bigbai, with a named `j5-herdr-trial` server,
 disposable workspace and two real native Hermes CLI sessions. This repository
 contains trial configuration and verified observations, not a fork of Herdr.
